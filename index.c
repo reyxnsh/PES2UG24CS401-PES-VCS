@@ -32,6 +32,12 @@ static int compare_index_entries(const void *a, const void *b) {
     return strcmp(ea->path, eb->path);
 }
 
+static int is_pes_internal_path(const char *path) {
+    return strcmp(path, PES_DIR) == 0 ||
+           strncmp(path, PES_DIR "/", strlen(PES_DIR) + 1) == 0 ||
+           strncmp(path, PES_DIR "\\", strlen(PES_DIR) + 1) == 0;
+}
+
 // ─── PROVIDED ────────────────────────────────────────────────────────────────
 
 // Find an index entry by path (linear scan).
@@ -251,10 +257,11 @@ int index_save(const Index *index) {
 // Returns 0 on success, -1 on error.
 int index_add(Index *index, const char *path) {
     if (!index || !path || path[0] == '\0') return -1;
-    if (strncmp(path, PES_DIR, strlen(PES_DIR)) == 0) return -1;
+    if (is_pes_internal_path(path) || strlen(path) >= sizeof(index->entries[0].path)) return -1;
 
     struct stat st;
     if (stat(path, &st) != 0 || !S_ISREG(st.st_mode)) return -1;
+    if (st.st_size < 0 || (uint64_t)st.st_size > UINT32_MAX) return -1;
 
     FILE *f = fopen(path, "rb");
     if (!f) return -1;
