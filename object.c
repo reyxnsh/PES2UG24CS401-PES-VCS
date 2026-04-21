@@ -17,6 +17,31 @@
 #include <unistd.h>
 #include <openssl/evp.h>
 
+static const char *object_type_name(ObjectType type) {
+    switch (type) {
+        case OBJ_BLOB: return "blob";
+        case OBJ_TREE: return "tree";
+        case OBJ_COMMIT: return "commit";
+        default: return NULL;
+    }
+}
+
+static int parse_object_type(const char *type_name, size_t len, ObjectType *type_out) {
+    if (len == 4 && strncmp(type_name, "blob", len) == 0) {
+        *type_out = OBJ_BLOB;
+        return 0;
+    }
+    if (len == 4 && strncmp(type_name, "tree", len) == 0) {
+        *type_out = OBJ_TREE;
+        return 0;
+    }
+    if (len == 6 && strncmp(type_name, "commit", len) == 0) {
+        *type_out = OBJ_COMMIT;
+        return 0;
+    }
+    return -1;
+}
+
 // ─── PROVIDED ────────────────────────────────────────────────────────────────
 
 void hash_to_hex(const ObjectID *id, char *hex_out) {
